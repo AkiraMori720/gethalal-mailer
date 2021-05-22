@@ -1,0 +1,79 @@
+#gethmailer_config_form input[type='text'].gc-form-field,
+#gethmailer_config_form select,
+#gethmailer_settings_form input[type='text'],
+#gethmailer_settings_form input[type='password'],
+#gethmailer_settings_form input[type='email'],
+#gethmailer_settings_test_email_form input[type='text']
+{
+    width: 350px;
+}
+
+textarea#gethmailer_test_message {
+    width: 350px;
+}
+
+div.gethmailer-tab-wrapper {
+    margin: 1px 12px;
+}
+
+div.gethmailer-tab-container .postbox{
+    padding: 8px;
+}
+
+.gethmailer-settings-container {
+    padding: 1px 12px;
+}
+.gethmailer-settings-grid {
+    display:inline-block;
+}
+.gethmailer-settings-main-cont {
+    width: 100%;
+}
+
+div.gethmailer-msg-cont {
+    clear: both;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    border-radius: 2px;
+    background-color: #ffffe0;
+}
+div.gethmailer-msg-cont.msg-error {
+    border-left: 5px solid red;
+}
+div.gethmailer-msg-cont.msg-success {
+    border-left: 5px solid green;
+}
+
+#gethmailer-debug-log-cont {
+    display: none;
+}
+
+#gethmailer_config_form .description{
+    margin-bottom: 8px;
+}
+
+#gethmailer_config_form .add-config-btn,
+#gethmailer_config_form .test-config-btn
+{
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    text-shadow: none;
+    margin-top: 0;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+@media (max-width: 782px) {
+    .gethmailer-settings-grid {
+	display: block;
+	float: none;
+	width: 100%;
+    }
+}
