@@ -142,8 +142,7 @@ class GethalalMailer
         $this->config = array_map(function($config){
             $result = (array)$config;
             $config_category_ids = explode(",", $result['config']);
-            $category_ids = gm_lang_object_ids($config_category_ids, 'product_cat');
-            $result['config'] = $category_ids;
+            $result['config'] = $config_category_ids;
             return $result;
         }, $configs);
     }
@@ -289,41 +288,59 @@ class GethalalMailer
 	    $processing_orders = [];
 	    do{
             $orders = wc_get_orders([
-                'status'    => array_map( 'wc_get_order_status_name', $valid_order_status),
+                'type'      => 'shop_order',
+                'status'    => array_unique($valid_order_status),
                 'page'      => $page,
                 'limit'     => 100
             ]);
 
-            $to=$this->mailConfig['gethmailer_to']??'';
-
             foreach ($orders as $order) {
-                $order_status = $order->get_status();
-                foreach ($this->config as $config) {
-                    $subject = $config['name'];
-                    $config_order_status = $config['order_status'];
-                    $config_order_status   = 'wc-' === substr( $config_order_status, 0, 3 ) ? substr( $config_order_status, 3 ) : $config_order_status;
-                    if($order_status != $config_order_status){
-                        continue;
-                    }
+                $order = wc_get_order($order);
 
-                    $orderData = $this->filterOrder($order, $config['config']);
-                    if ($orderData) {
-                        if(!isset($processing_orders[$config['id']])){
-                            $processing_orders[$config['id']] = ['subject' => $subject, 'content' => []];
+                // Check Second Day`s Order
+                if(!$order || !$this->isSecondDayOrders($order)){
+                    continue;
+                }
+
+                foreach ( $order->get_items() as $item ) {
+                    if ($item->is_type('line_item')) {
+
+                        $order_id = $order->get_id();
+                        $order_status = $order->get_status();
+                        foreach ($this->config as $config) {
+                            $subject = $config['name'];
+
+                            // Check Order Status
+                            $config_order_status = $config['order_status'];
+                            $config_order_status = 'wc-' === substr($config_order_status, 0, 3) ? substr($config_order_status, 3) : $config_order_status;
+                            if ($order_status != $config_order_status) {
+                                continue;
+                            }
+
+                            $category_ids = gm_lang_object_ids($config['config'], 'product_cat');
+                            $productData = $this->filterProduct($item, $category_ids);
+                            if ($productData) {
+                                if (!isset($processing_orders[$config['id']])) {
+                                    $processing_orders[$config['id']] = ['subject' => $subject, 'content' => []];
+                                }
+                                if(!isset($processing_orders[$config['id']]['content'][$order_id])) {
+                                    $processing_orders[$config['id']]['content'][$order_id] = [];
+                                }
+                                $processing_orders[$config['id']]['content'][$order_id][] = $productData;
+                            }
                         }
-                        $processing_orders[$config['id']]['content'][] = $orderData;
-                        break;
                     }
                 }
             }
             $page++;
         } while (count($orders) == 100);
 
-		$errors=[];
-
         //test
         $this->addLog("filter orders: " . json_encode($processing_orders));
 
+        $to=$this->mailConfig['gethmailer_to']??'';
+
+		$errors=[];
 		foreach ($processing_orders as $key => $data){
             $content = $this->buildMailContent($data['content']);
 
@@ -342,21 +359,24 @@ class GethalalMailer
 		return $errors;
 	}
 
-
     /**
      * @param WC_Order $order
-     * @param $allow_category_ids
-     * @return bool|array
+     * @return bool
      */
-	function filterOrder(WC_Order $order, $allow_category_ids)
+	function isSecondDayOrders(WC_Order $order): bool
     {
-        $productData = [];
-
-        $createdAt = $order->get_date_created();
         $_delivery_date = get_post_meta($order->get_id(), '_delivery_date', true);
-        if(empty($_delivery_date)){ return false; }
 
-        $delivery_date = (new DateTime())->setTimestamp($_delivery_date)->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+        if(empty($_delivery_date)){ return false; }
+        $delivery_date = (new DateTime())->setTimestamp($_delivery_date)->format('Y-m-d');
+
+        //test
+        $this->addLog(sprintf(
+            "delivery_date: %s => OrderId: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
+            $delivery_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
+        ));
+
+
         $target_date = (new DateTime())->add(new DateInterval("P2D"))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
 
         // Next Next Delivery Order
@@ -364,43 +384,42 @@ class GethalalMailer
 
         //test
         $this->addLog(sprintf(
-            "delivery_date: %s target_date: %s => OrderId: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
-            $delivery_date, $target_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
+            "SecondDayOrder: OrderId: %s Delivery: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
+            $order->get_id(), $delivery_date, $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
         ));
+        return true;
+    }
 
-		foreach ( $order->get_items() as $item ) {
-			if ( $item->is_type( 'line_item' ) ) {
 
-                /** @var WC_Product $product */
-				$product = $item->get_product();
-				$quantity = $item->get_quantity();
-				if($product){
-				    $category_ids = $product->get_category_ids();
+    /**
+     * @param WC_Order_Item_Product $order_item
+     * @param $allow_category_ids
+     * @return bool|array
+     */
+	function filterProduct(WC_Order_Item_Product $order_item, $allow_category_ids)
+    {
+        /** @var WC_Product $product */
+        $product = $order_item->get_product();
+        $quantity = $order_item->get_quantity();
+        if ($product) {
 
-				    if(!$this->allowCategory($category_ids, $allow_category_ids)){
-				        continue;
-                    }
+            $category_ids = $product->get_category_ids();
+            $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
 
-				    $product_weight = $product->get_weight();
-				    $all_weight = "${product_weight} * ${quantity}";
+            if (!$this->allowCategory($category_ids, $allow_category_ids)) {
+                return false;
+            }
 
-                    $productData[] = [
-                        'weight' => $all_weight,
-                        'product_id' => $product->get_id(),
-                        'product_name' => $product->get_name(),
-                        'product_sku' => $product->get_sku(),
-                    ];
-                }
-			}
-		}
+            $product_weight = $product->get_weight();
+            $all_weight = "${product_weight} * ${quantity}";
 
-		if(empty($productData)){
-		    return false;
+            return [
+                'weight' => $all_weight,
+                'product_id' => $product->get_id(),
+                'product_name' => $product->get_name(),
+            ];
         }
-		return [
-		    'order_id' => $order->get_id(),
-            'products' => $productData
-        ];
+		return false;
 	}
 
 	/**
@@ -420,27 +439,26 @@ class GethalalMailer
      * @return string
      */
     function buildMailContent($orders){
-	    $content = "<table border='0'>
+	    $content = "<table border='1'>
                         <tr>
                             <th>No</th>
                             <th>Order ID</th>
                             <th>Product Name</th>
-                            <th>Product SKU</th>
                             <th>Weight</th>
                         </tr>
                         ";
-	    foreach ($orders as $ino => $order){
-	        $no = $ino + 1;
-	        $rows = count($order['products']);
-	        foreach ($order['products'] as $index => $product){
+	    $no = 0;
+	    foreach ($orders as $id => $products){
+	        $no++;
+	        $rows = count($products);
+	        foreach ($products as $index => $product){
                 $content .= "<tr>";
 
                 if($index == 0){
                     $content .= "<td rowspan=\"${rows}\">${no}</td>
-                                <td rowspan=\"${rows}\">#${order['order_id']}</td>";
+                                <td rowspan=\"${rows}\">#${id}</td>";
                 }
                 $content .= "<td>${product['product_name']}</td>
-                            <td>${product['product_sku']}</td>
                             <td align=\"right\">${product['weight']}</td>";
 
 	            $content .= "</tr>";

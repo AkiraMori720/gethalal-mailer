@@ -79,16 +79,22 @@ div.gethmailer-msg-cont.msg-success {
 table.gm-pc-table {
     width: 100%;
     border-spacing: 0;
+    display: block;
 }
 
 table.gm-pc-table thead,
-table.gm-pc-table tbody,
-table.gm-pc-table tr,
-table.gm-pc-table th,
-table.gm-pc-table td
-{ display: block; }
+table.gm-pc-table tbody{
+    width: 100%;
+    display: block;
+}
 
-table.gm-pc-table thead tr {
+table.gm-pc-table tr th {
+    width: unset;
+    padding: 15px 10px;
+}
+
+table.gm-pc-table tr {
+    display: block;
     /* minus scroll bar width */
     width: -webkit-calc(100% - 16px);
     width:    -moz-calc(100% - 16px);
@@ -104,48 +110,31 @@ table.gm-pc-table tr:after {  /* clearing float */
 
 table.gm-pc-table tbody {
     height: 500px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
 }
 
-table.gm-pc-table tbody td:nth-child(1) {
+table.gm-pc-table tr th:nth-child(1),
+table.gm-pc-table tr td:nth-child(1){
     float: left;
-    width: 10%;
+    width: 12px;
 }
-table.gm-pc-table tbody td:nth-child(2) {
-    float: left;
-    width: 20%;
-}
-table.gm-pc-table tbody td:nth-child(3) {
-    float: left;
-    width: 20%;
-}
-table.gm-pc-table tbody td:nth-child(4) {
+table.gm-pc-table tr th:nth-child(2),
+table.gm-pc-table tr td:nth-child(2){
     float: left;
     width: 25%;
 }
-table.gm-pc-table tbody td:nth-child(5) {
-    float: left;
-    width: 10%;
-}
-
-table.gm-pc-table thead th:nth-child(1) {
-    float: left;
-    width: 15%;
-}
-table.gm-pc-table thead th:nth-child(2) {
-    float: left;
-    width: 20%;
-}
-table.gm-pc-table thead th:nth-child(3) {
-    float: left;
-    width: 20%;
-}
-table.gm-pc-table thead th:nth-child(4) {
+table.gm-pc-table tr th:nth-child(3),
+table.gm-pc-table tr td:nth-child(3){
     float: left;
     width: 25%;
 }
-table.gm-pc-table thead th:nth-child(5) {
+table.gm-pc-table tr th:nth-child(4),
+table.gm-pc-table tr td:nth-child(4){
+    float: left;
+    width: 25%;
+}
+table.gm-pc-table tr th:nth-child(5),
+table.gm-pc-table tr td:nth-child(5){
     float: left;
     width: 10%;
 }
