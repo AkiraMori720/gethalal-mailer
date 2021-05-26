@@ -47,7 +47,9 @@
         }
         $result=$wpdb->get_results("SELECT * FROM $table_name WHERE id = $id");
         $config = (array)($result[0]);
-        $config['config'] = explode(",", $config['config']);
+        $config_category_ids = explode(",", $config['config']);
+        $category_ids = gm_lang_object_ids($config_category_ids, 'product_cat');
+        $config['config'] = $category_ids;
     } else {
         $config = [];
     }
@@ -90,7 +92,7 @@
                                     <td>
                                         <?php
                                         $orderStatuses = wc_get_order_statuses();
-                                        $output = '<select class="order-status" id="gethmailer_order_status" name="config_order_status">';
+                                        $output = '<select class="gc-form-field" id="gethmailer_order_status" name="config_order_status">';
                                         if(!empty($orderStatuses)){
                                             foreach( $orderStatuses as $key => $orderStatus ) {
                                                 $output.= '<option value="'. esc_attr( $key ) .'" ' .((isset($config['order_status']) && $key==$config['order_status'])?'selected':''). '>'. esc_attr( $orderStatus ).'</option>';

@@ -3,41 +3,24 @@ if( ! class_exists( 'WP_List_Table' ) ) {
     require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
 
-class GM_PC_List_Table extends WP_List_Table
+class GM_PC_List_Table
 {
     private $check_ids;
 
-    function __construct($check_ids = []){
-        parent::__construct(array(
-            'singular' => 'singular_name',
-            'plural' => 'plural_name',
-            'ajax' => false
-        ));
+    private $headers;
+    private $items;
 
+    function __construct($check_ids = []){
         $this->check_ids = $check_ids == null?[]:$check_ids;
     }
 
     public function prepare_items()
     {
         $columns = $this->get_columns();
-        $hidden = $this->get_hidden_columns();
-        $sortable = $this->get_sortable_columns();
 
         $data = $this->table_data();
-        usort( $data, array( &$this, 'sort_data' ) );
 
-        $perPage = 10;
-        $currentPage = $this->get_pagenum();
-        $totalItems = count($data);
-
-        $this->set_pagination_args( array(
-            'total_items' => $totalItems,
-            'per_page'    => $perPage
-        ) );
-
-        $data = array_slice($data,(($currentPage-1)*$perPage),$perPage);
-
-        $this->_column_headers = array($columns, $hidden, $sortable);
+        $this->headers = $columns;
         $this->items = $data;
     }
 
@@ -62,19 +45,20 @@ class GM_PC_List_Table extends WP_List_Table
 
     public function get_sortable_columns()
     {
-        return array('name' => array('Name', false), 'description' => array('Description', false), 'slug' => array('Slug', false), 'count' => array('Count', false));
+        return array('name' => array('name', false), 'description' => array('description', false), 'slug' => array('slug', false), 'count' => array('count', false));
     }
 
     private function table_data()
     {
-        $data = array();
         $productCats = get_terms(array(
             'taxonomy' => 'product_cat',
             'hide_empty' => false
         ));
 
+        $parents = [];
+        $children = [];
         foreach ($productCats as $productCat){
-            $data[] = [
+            $data= [
                 'id' => $productCat->term_id,
                 'parent' => $productCat->parent,
                 'name' => $productCat->name,
@@ -82,9 +66,43 @@ class GM_PC_List_Table extends WP_List_Table
                 'slug' => $productCat->slug,
                 'count' => $productCat->count
             ];
+            if($productCat->parent){
+                $children[] = $data;
+            } else {
+                $parents[] = $data;
+            }
         }
 
-        return $data;
+        usort( $parents, array( &$this, 'sort_data' ) );
+
+        $sortedData = [];
+        foreach ($parents as $parent){
+            $sortedData[]=$parent;
+            $sortedData = array_merge($sortedData, $this->getChildren($parent, $children));
+        }
+        return $sortedData;
+    }
+
+    private function getChildren($parent, $items){
+        $firstChildren = [];
+        $children = [];
+        foreach ($items as $item) {
+            if($item['parent'] == $parent['id']){
+                $firstChildren[] = $item;
+            } else {
+                $children[] = $item;
+            }
+        }
+
+        if(empty($firstChildren)){
+            return [];
+        }
+        $result = [];
+        foreach ($firstChildren as $child){
+            $result[] = $child;
+            $result = array_merge($result, $this->getChildren($child, $children));
+        }
+        return $result;
     }
 
     public function column_default( $item, $column_name )
@@ -93,10 +111,10 @@ class GM_PC_List_Table extends WP_List_Table
             case 'name':
                 return $item['parent']!=0?"— ${item['name']}":$item['name'];
             case 'description':
-            case 'slug':
             case 'count':
                 return $item[ $column_name ];
-
+            case 'slug':
+                return wc_sanitize_taxonomy_name( stripslashes($item[ $column_name ]));
             default:
                 return print_r( $item, true ) ;
         }
@@ -116,14 +134,14 @@ class GM_PC_List_Table extends WP_List_Table
     private function sort_data( $a, $b )
     {
         // Set defaults
-        $orderby = 'name';
         $order = 'asc';
 
         // If orderby is set, use this as the sort column
-        if(!empty($_GET['orderby']))
+        if(empty($_GET['orderby']))
         {
-            $orderby = $_GET['orderby'];
+            return false;
         }
+        $orderby = $_GET['orderby'];
 
         // If order is set use this as the order
         if(!empty($_GET['order']))
@@ -140,5 +158,26 @@ class GM_PC_List_Table extends WP_List_Table
         }
 
         return -$result;
+    }
+
+    public function display(){
+        echo "<Table class='gm-pc-table'><thead><tr>";
+
+        foreach ($this->headers as $column => $header){
+            echo "<th>" . ($column != 'cb'?$header:'') . "</th>";
+        }
+
+        echo "</tr></thead><tbody>";
+
+        //body
+        foreach ($this->items as $r => $row){
+            echo "<tr>";
+            foreach ($this->headers as $column => $header){
+                echo "<td>" . ($column == 'cb'?$this->column_cb($row):$this->column_default($row, $column)) . "</td>";
+            }
+            echo "</tr>";
+        }
+
+        echo "</tbody></Table>";
     }
 }

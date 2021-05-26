@@ -31,7 +31,6 @@ class GM_Log_List_Table extends WP_List_Table
             'total_items' => $totalItems,
             'per_page' => $perPage
         ));
-
         $data = array_slice($data, (($currentPage - 1) * $perPage), $perPage);
 
         $this->_column_headers = array($columns, $hidden, $sortable);
@@ -85,7 +84,11 @@ class GM_Log_List_Table extends WP_List_Table
     {
         switch ($column_name) {
             case 'datetime':
-                return $item[$column_name];
+            {
+                $time = new DateTime('now', new DateTimeZone('Europe/Berlin'));
+                $time->setTimestamp($item[$column_name]);
+                return $time->format('D, Y-m-d H:i:s');
+            }
             case 'message':
                 return $item[$column_name];
             default:

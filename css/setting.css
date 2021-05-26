@@ -16,8 +16,13 @@ div.gethmailer-tab-wrapper {
     margin: 1px 12px;
 }
 
-div.gethmailer-tab-container .postbox{
+div.gethmailer-tab-container .postbox,
+div.gethmailer-log-container .postbox{
     padding: 8px;
+}
+
+div.gethmailer-tab-container .form-table th{
+    width: unset;
 }
 
 .gethmailer-settings-container {
@@ -68,6 +73,81 @@ div.gethmailer-msg-cont.msg-success {
     -webkit-appearance: none;
     border-radius: 3px;
     display: inline-block;
+}
+
+
+table.gm-pc-table {
+    width: 100%;
+    border-spacing: 0;
+}
+
+table.gm-pc-table thead,
+table.gm-pc-table tbody,
+table.gm-pc-table tr,
+table.gm-pc-table th,
+table.gm-pc-table td
+{ display: block; }
+
+table.gm-pc-table thead tr {
+    /* minus scroll bar width */
+    width: -webkit-calc(100% - 16px);
+    width:    -moz-calc(100% - 16px);
+    width:         calc(100% - 16px);
+}
+
+table.gm-pc-table tr:after {  /* clearing float */
+    content: ' ';
+    display: block;
+    visibility: hidden;
+    clear: both;
+}
+
+table.gm-pc-table tbody {
+    height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+table.gm-pc-table tbody td:nth-child(1) {
+    float: left;
+    width: 10%;
+}
+table.gm-pc-table tbody td:nth-child(2) {
+    float: left;
+    width: 20%;
+}
+table.gm-pc-table tbody td:nth-child(3) {
+    float: left;
+    width: 20%;
+}
+table.gm-pc-table tbody td:nth-child(4) {
+    float: left;
+    width: 25%;
+}
+table.gm-pc-table tbody td:nth-child(5) {
+    float: left;
+    width: 10%;
+}
+
+table.gm-pc-table thead th:nth-child(1) {
+    float: left;
+    width: 15%;
+}
+table.gm-pc-table thead th:nth-child(2) {
+    float: left;
+    width: 20%;
+}
+table.gm-pc-table thead th:nth-child(3) {
+    float: left;
+    width: 20%;
+}
+table.gm-pc-table thead th:nth-child(4) {
+    float: left;
+    width: 25%;
+}
+table.gm-pc-table thead th:nth-child(5) {
+    float: left;
+    width: 10%;
 }
 
 @media (max-width: 782px) {

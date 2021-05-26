@@ -141,7 +141,9 @@ class GethalalMailer
 
         $this->config = array_map(function($config){
             $result = (array)$config;
-            $result['config'] = explode(",", $result['config']);
+            $config_category_ids = explode(",", $result['config']);
+            $category_ids = gm_lang_object_ids($config_category_ids, 'product_cat');
+            $result['config'] = $category_ids;
             return $result;
         }, $configs);
     }
@@ -282,36 +284,46 @@ class GethalalMailer
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	function send_mail_preprocessing_products(){
-		$orders = wc_get_orders([
-			'limit'    => -1
-		]);
+	    $valid_order_status = array_map(function($i){return $i['order_status'];}, $this->config);
+	    $page = 1;
+	    $processing_orders = [];
+	    do{
+            $orders = wc_get_orders([
+                'status'    => array_map( 'wc_get_order_status_name', $valid_order_status),
+                'page'      => $page,
+                'limit'     => 100
+            ]);
 
-		$to=$this->mailConfig['gethmailer_to']??'';
+            $to=$this->mailConfig['gethmailer_to']??'';
 
-
-		$processing_orders = [];
-		foreach ($orders as $order) {
-		    $order_status = $order->get_status('edit');
-		    foreach ($this->config as $config) {
-                $subject = $config['name'];
-                $config_order_status = $config['order_status'];
-                $config_order_status   = 'wc-' === substr( $config_order_status, 0, 3 ) ? substr( $config_order_status, 3 ) : $config_order_status;
-                if($order_status != $config_order_status){
-                    continue;
-                }
-
-                $orderData = $this->filterOrder($order, $config['config']);
-                if ($orderData) {
-                    if(!isset($processing_orders[$config['id']])){
-                        $processing_orders[$config['id']] = ['subject' => $subject, 'content' => []];
+            foreach ($orders as $order) {
+                $order_status = $order->get_status();
+                foreach ($this->config as $config) {
+                    $subject = $config['name'];
+                    $config_order_status = $config['order_status'];
+                    $config_order_status   = 'wc-' === substr( $config_order_status, 0, 3 ) ? substr( $config_order_status, 3 ) : $config_order_status;
+                    if($order_status != $config_order_status){
+                        continue;
                     }
-                    $processing_orders[$config['id']]['content'][] = $orderData;
-                    break;
+
+                    $orderData = $this->filterOrder($order, $config['config']);
+                    if ($orderData) {
+                        if(!isset($processing_orders[$config['id']])){
+                            $processing_orders[$config['id']] = ['subject' => $subject, 'content' => []];
+                        }
+                        $processing_orders[$config['id']]['content'][] = $orderData;
+                        break;
+                    }
                 }
             }
-        }
+            $page++;
+        } while (count($orders) == 100);
 
 		$errors=[];
+
+        //test
+        $this->addLog("filter orders: " . json_encode($processing_orders));
+
 		foreach ($processing_orders as $key => $data){
             $content = $this->buildMailContent($data['content']);
 
@@ -319,10 +331,12 @@ class GethalalMailer
              $result = $this->sendMail($to, $data['subject'], $content);
              // Success
              if(!isset($result['error'])){
-
+                 $message = sprintf("Sent Mail to %s, Subject: %s", $to, $data['subject']);
+                 $this->addLog($message);
              // Failure
              } else {
                  $errors['error'] .= $result['error'] . PHP_EOL;
+                 $this->addLog($result['error']);
              }
         }
 		return $errors;
@@ -331,6 +345,7 @@ class GethalalMailer
 
     /**
      * @param WC_Order $order
+     * @param $allow_category_ids
      * @return bool|array
      */
 	function filterOrder(WC_Order $order, $allow_category_ids)
@@ -338,8 +353,20 @@ class GethalalMailer
         $productData = [];
 
         $createdAt = $order->get_date_created();
-        $order_delivery_date = get_post_meta($order->get_id(), '_delivery_date', true);
-        var_dump("delivery_date: " . $order_delivery_date);
+        $_delivery_date = get_post_meta($order->get_id(), '_delivery_date', true);
+        if(empty($_delivery_date)){ return false; }
+
+        $delivery_date = (new DateTime())->setTimestamp($_delivery_date)->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+        $target_date = (new DateTime())->add(new DateInterval("P2D"))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+
+        // Next Next Delivery Order
+        if($delivery_date != $target_date){ return false; }
+
+        //test
+        $this->addLog(sprintf(
+            "delivery_date: %s target_date: %s => OrderId: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
+            $delivery_date, $target_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
+        ));
 
 		foreach ( $order->get_items() as $item ) {
 			if ( $item->is_type( 'line_item' ) ) {

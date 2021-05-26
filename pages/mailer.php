@@ -1,6 +1,5 @@
 <?php
     require_once( GETHALAL_MAILER_PLUGIN_DIR . '/class/class-gm-cf-list-table.php' );
-    require_once( GETHALAL_MAILER_PLUGIN_DIR . '/class/class-gm-log-list-table.php' );
 
     $gethalal_mailer = GethalalMailer::instance();
     $gethalal_config = $gethalal_mailer->getMailConfig();
@@ -18,15 +17,6 @@
             $error .= $result['error'];
         } else {
             $message .= __( 'Send mails successfully.', 'gethalal-mailer' );
-        }
-    }
-    // Sumit Log Clear
-    else if( isset( $_POST['gethmailer_log_clear_submit'])){
-        $result = $gethalal_mailer->clearLogs();
-        if(isset($result['error'])){
-            $error .= $result['error'];
-        } else {
-            $message .= __( 'Clear logs successfully.', 'gethalal-mailer' );
         }
     }
     // Submit Mailer Config
@@ -143,7 +133,6 @@
 
     <div class="nav-tab-wrapper gethmailer-tab-wrapper">
         <a href="#product" data-tab-name="product" class="nav-tab"><?php esc_html_e( 'Preprocessing Config', 'gethalal-mailer' ); ?></a>
-        <a href="#log" data-tab-name="log" class="nav-tab"><?php esc_html_e( 'Preprocessing Logs', 'gethalal-mailer' ); ?></a>
         <a href="#smtp" data-tab-name="smtp" class="nav-tab"><?php esc_html_e( 'SMTP Settings', 'gethalal-mailer' ); ?></a>
         <a href="#testemail" data-tab-name="testemail" class="nav-tab"><?php esc_html_e( 'Test Email', 'gethalal-mailer' ); ?></a>
     </div>
@@ -200,9 +189,9 @@
                                         <p class="description">
                                             <?php
                                             if($schedule_working){
-                                                $schedule_time = new DateTime();
+                                                $schedule_time = new DateTime('now', new DateTimeZone('Europe/Berlin'));
                                                 $schedule_time->setTimestamp($schedule_working);
-                                                echo "Schedule is working. Next Schedule Time: ". $schedule_time->format(DATE_ATOM);
+                                                echo "Schedule is working. Next Schedule Time: ". $schedule_time->format('D, Y-m-d H:i:s') . " (Berlin Timezone)";
                                             } else {
                                                 esc_html_e( "Not Scheduled. Check for starting schedule.", 'gethalal-mailer' );
                                             } ?>
@@ -225,28 +214,6 @@
                 </div><!-- end of postbox -->
             </div>
 
-            <div class="gethmailer-tab-container" data-tab-name="log">
-                <form autocomplete="off" id="gethmailer_log_form" method="post" action="">
-                    <div class="postbox">
-                        <h3 class="hndle"><label for="title"><?php esc_html_e( 'Preprocessing Logs', 'gethalal-mailer' ); ?></label></h3>
-                        <div class="inside">
-                            <table class="form-table">
-                                <?php
-                                    $pc_list_table = new GM_Log_List_Table();
-                                    $pc_list_table->prepare_items();
-                                    $pc_list_table->display();
-                                ?>
-                            </table>
-                            <p class="submit">
-                                <input type="submit" id="gethmailer_log-form-submit" class="button-primary" value="<?php esc_attr_e( 'Clear All', 'gethalal-mailer' ); ?>" />
-                                <input type="hidden" name="gethmailer_log_clear_submit" value="submit" />
-                                <?php wp_nonce_field( plugin_basename( __FILE__ ), 'gethmailer_log_nonce_name' ); ?>
-                            </p>
-                        </div><!-- end of inside -->
-                    </div><!-- end of postbox -->
-                </form>
-            </div>
-            
             <div class="gethmailer-tab-container" data-tab-name="smtp">
                 <form autocomplete="off" id="gethmailer_settings_form" method="post" action="">
                 <div class="postbox">

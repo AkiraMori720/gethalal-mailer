@@ -32,6 +32,7 @@ if (!defined('ABSPATH')) {
 
 
 // Include Class File
+include("gethalal-functions.php");
 include("class/class-gethalal-mailer.php");
 GethalalMailer::instance();
 
@@ -72,7 +73,7 @@ function gethalal_mailer_db_install() {
     $sql = "CREATE TABLE `${wpdb_prefix}gethmailer_logs` (
         `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
         `datetime` varchar(255) NOT NULL,
-        `message` int(11) NOT NULL
+        `message` varchar(512)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
     dbDelta( $sql );
@@ -83,8 +84,8 @@ function gethalal_mailer_db_install() {
  */
 function gethalal_mailer_register_menu(){
     add_menu_page('Mailer Setting','Mailer Setting','read','gethalal_mailer','goto_gethalal_mailer_page','',26);
-    add_submenu_page("admin.php?page=gethalal_mailer",__( 'Mailer Config', 'gethalal-mailer' ), __( 'Mailer Config', 'gethalal-mailer' ), "manage_options", "gm_mailer_config", 'goto_gethalal_mailer_config_page');
-
+    add_submenu_page("gethalal_mailer",__( 'New Config', 'gethalal-mailer' ), __( 'New Config', 'gethalal-mailer' ), "manage_options", "gm_mailer_config", 'goto_gethalal_mailer_config_page');
+    add_submenu_page("gethalal_mailer",__( 'Mailer Log', 'gethalal-mailer' ), __( 'Mailer Log', 'gethalal-mailer' ), "manage_options", "gm_mailer_log", 'goto_gethalal_mailer_log_page');
 }
 
 function goto_gethalal_mailer_page(){
@@ -93,6 +94,10 @@ function goto_gethalal_mailer_page(){
 
 function goto_gethalal_mailer_config_page(){
     require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer_config.php';
+}
+
+function goto_gethalal_mailer_log_page(){
+    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer_log.php';
 }
 
 add_action('admin_menu','gethalal_mailer_register_menu');
@@ -114,10 +119,14 @@ add_action('admin_head', 'fontawesome_icon_gethalal_mailer_menu');
  * Import js files
  */
 function gethalal_enqueue($hook){
-    wp_enqueue_style('fontawesome','https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css', '', '5.11.2', 'all');
+    wp_enqueue_style('gethalal_fontawesome','https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css', '', '5.11.2', 'all');
     if($hook == "toplevel_page_gethalal_mailer"){
 		wp_enqueue_script( 'gethmailer_admin_js', plugin_dir_url(__FILE__) . 'js/script.js', array(), GETHALAL_MAILER_VERSION);
         wp_enqueue_style( 'gethmailer_admin_css', plugin_dir_url(__FILE__) . 'css/setting.css', array(), GETHALAL_MAILER_VERSION );
+    } else if($hook == "mailer-setting_page_gm_mailer_config"){
+        wp_enqueue_style( 'gethmailer_config_css', plugins_url('css/setting.css',__FILE__ ), array(), GETHALAL_MAILER_VERSION );
+    } else if($hook == "mailer-setting_page_gm_mailer_log"){
+        wp_enqueue_style( 'gethmailer_log_css', plugin_dir_url(__FILE__) . 'css/setting.css', array(), GETHALAL_MAILER_VERSION );
     }
 }
 add_action('admin_enqueue_scripts',  'gethalal_enqueue');
