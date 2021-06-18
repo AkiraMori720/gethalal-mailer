@@ -118,6 +118,14 @@ class GethalalMailer
         ];
     }
 
+    public function getDeliveryTimes(){
+	    return [
+	        '0' => 'All From Today',
+            '1' => 'Tomorrow',
+            '2' => 'Day After Tomorrow'
+        ];
+    }
+
     function addLog($message){
         global $wpdb;
         $config_table = $wpdb->prefix . 'gethmailer_logs';
@@ -298,7 +306,7 @@ class GethalalMailer
                 $order = wc_get_order($order);
 
                 // Check Second Day`s Order
-                if(!$order || !$this->isSecondDayOrders($order)){
+                if(!$order || !$this->filterOrderByDeliveryTime($order, $this->mailConfig['delivery_time']??"1")){
                     continue;
                 }
 
@@ -363,7 +371,7 @@ class GethalalMailer
      * @param WC_Order $order
      * @return bool
      */
-	function isSecondDayOrders(WC_Order $order): bool
+	function filterOrderByDeliveryTime(WC_Order $order, $deliveryTime): bool
     {
         $_delivery_date = get_post_meta($order->get_id(), '_delivery_date', true);
 
@@ -376,11 +384,23 @@ class GethalalMailer
             $delivery_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
         ));
 
-
-        $target_date = (new DateTime())->add(new DateInterval("P2D"))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
-
-        // Next Next Delivery Order
-        if($delivery_date != $target_date){ return false; }
+        switch ($deliveryTime){
+            case "0":
+                $target_date = (new DateTime())->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+                // Next Next Delivery Order
+                if($delivery_date < $target_date){ return false; }
+                break;
+            case "1":
+                $target_date = (new DateTime())->add(new DateInterval("P1D"))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+                // Next Next Delivery Order
+                if($delivery_date != $target_date){ return false; }
+                break;
+            case "2":
+                $target_date = (new DateTime())->add(new DateInterval("P2D"))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('Y-m-d');
+                // Next Next Delivery Order
+                if($delivery_date != $target_date){ return false; }
+                break;
+        }
 
         //test
         $this->addLog(sprintf(

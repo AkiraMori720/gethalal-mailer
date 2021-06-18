@@ -40,6 +40,7 @@
         }
 
         $gethalal_config['schedule_time'] = $_POST['gethmailer_schedule_time'];
+        $gethalal_config['delivery_time'] = $_POST['gethmailer_delivery_time'];
 
         /* Update settings in the database */
         if (empty($error)) {
@@ -153,6 +154,21 @@
                                     <td>
                                         <input id="gethmailer_to" type="text" class="gc-form-field" name="gethmailer_to" value="<?php echo isset( $gethalal_config['gethmailer_to'] ) ? esc_attr( $gethalal_config['gethmailer_to'] ) : ''; ?>" /><br />
                                         <p class="description"><?php esc_html_e( "Enter the recipient's email address", 'gethalal-mailer' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php esc_html_e( 'Order Filter', 'gethalal-mailer' ); ?>:</th>
+                                    <td>
+                                        <?php
+                                        $deliveryTimes = $gethalal_mailer->getDeliveryTimes();
+                                        $output = '<select class="order-delivery-time" id="gethmailer_delivery_time" name="gethmailer_delivery_time">';
+                                        foreach( $deliveryTimes as $key => $deliveryTime ) {
+                                            $output.= '<option value="'. esc_attr( $key ) .'" ' .((isset($gethalal_config['delivery_time']) && $key==$gethalal_config['delivery_time'])?'selected':''). '>'. esc_attr( $deliveryTime ).'</option>';
+                                        }
+                                        $output.='</select>';
+                                        echo $output;
+                                        ?>
+                                        <p class="description"><?php esc_html_e( "Select target order`s delivery time", 'gethalal-mailer' ); ?></p>
                                     </td>
                                 </tr>
                                 <tr valign="top">

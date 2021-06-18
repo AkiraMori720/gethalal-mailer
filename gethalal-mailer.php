@@ -131,19 +131,6 @@ function gethalal_enqueue($hook){
 }
 add_action('admin_enqueue_scripts',  'gethalal_enqueue');
 
-// Mailer Config
-add_action( 'phpmailer_init', 'gethalal_setup_phpmailer_init' );
-function gethalal_setup_phpmailer_init( $phpmailer ) {
-    $phpmailer->Host = 'HOSTNAME'; // for example, smtp.mailtrap.io
-    $phpmailer->Port = 587; // set the appropriate port: 465, 2525, etc.
-    $phpmailer->Username = 'YOURUSERNAME'; // your SMTP username
-    $phpmailer->Password = 'YOURPASSWORD'; // your SMTP password
-    $phpmailer->SMTPAuth = true;
-    $phpmailer->SMTPSecure = 'tls'; // preferable but optional
-    $phpmailer->IsSMTP();
-}
-
-
 // Plugin Deactivation
 register_deactivation_hook(__FILE__, 'gethalal_mailer_deactivate');
 
