@@ -2,10 +2,10 @@
     require_once( GETHALAL_MAILER_PLUGIN_DIR . '/class/class-gm-pc-list-table.php' );
     global $wpdb;
 
-    $gethalal_mailer = GethalalMailer::instance();
+    $gethalal_profit = GethalalProfit::instance();
     $id = $_GET['id'] ?? null;
 
-    $table_name =  $wpdb->prefix . 'gethmailer_configs';
+    $table_name =  $wpdb->prefix . 'gethprofit_configs';
 
 
     $message = '';
@@ -13,7 +13,7 @@
 
     $uri_parts = explode('?', $_SERVER['REQUEST_URI'], 2);
 
-    if( isset( $_POST['gethmailer_config_submit'])){
+    if( isset( $_POST['gethprofit_config_submit'])){
 
         $config = [];
         $config['id'] = $id??null;
@@ -24,25 +24,23 @@
         }
 
         $config['priority'] = $_POST['config_priority'];
-        $config['order_status'] = $_POST['config_order_status'];
         $config['config'] = $_POST['config_categories'];
 
         /* Update settings in the database */
         if ( empty( $error ) ) {
-            $gethalal_mailer->setConfig( $config );
+            $gethalal_profit->setConfig( $config );
             $message .= __( 'Config saved.', 'gethalal-mailer' );
+            $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_profit";
+            wp_redirect($action_url);
         } else {
             $error .= ' ' . __( 'Config are not saved.', 'gethalal-mailer' );
         }
-
-        $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_mailer";
-        wp_redirect($action_url);
     }
 
     if(!empty($id)){
         if(isset($_GET['action']) && $_GET['action'] == 'trash'){
             $wpdb->query("DELETE FROM $table_name WHERE id=$id");
-            $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_mailer";
+            $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_profit";
             wp_redirect($action_url);
         }
         $result=$wpdb->get_results("SELECT * FROM $table_name WHERE id = $id");
@@ -56,8 +54,8 @@
 
 ?>
 
-<div class="wrap" id="swpsmtp-mail">
-	<h2><?php esc_html_e( 'Mailer Setting', 'gethalal-mailer' ); ?></h2>
+<div class="wrap" id="gethprofit_config">
+	<h2><?php esc_html_e( 'Profit Calculator', 'gethalal-mailer' ); ?></h2>
 
     <div class="updated fade" <?php echo empty( $message ) ? ' style="display:none"' : ''; ?>>
 		<p><strong><?php echo esc_html( $message ); ?></strong></p>
@@ -68,9 +66,9 @@
 
     <div class="gethmailer-settings-container">
         <div class="gethmailer-settings-grid gethmailer-settings-main-cont">
-                <form autocomplete="off" id="gethmailer_config_form" method="post" action="">
+                <form autocomplete="off" id="gethprofit_config_form" method="post" action="">
                     <div class="postbox" style="padding: 8px">
-                        <h3 class="hndle"><label for="title"><?php esc_html_e( 'Preprocessing Config', 'gethalal-mailer' ); ?></label></h3>
+                        <h3 class="hndle"><label for="title"><?php esc_html_e( 'Revenue Config', 'gethalal-mailer' ); ?></label></h3>
                         <div class="inside">
                             <table class="form-table">
                                 <tr valign="top">
@@ -88,25 +86,6 @@
                                     </td>
                                 </tr>
                                 <tr valign="top">
-                                    <th scope="row"><?php esc_html_e( 'Order Status', 'gethalal-mailer' ); ?>:</th>
-                                    <td>
-                                        <?php
-                                        $orderStatuses = wc_get_order_statuses();
-                                        $output = '<select class="gc-form-field" id="gethmailer_order_status" name="config_order_status">';
-                                        if(!empty($orderStatuses)){
-                                            foreach( $orderStatuses as $key => $orderStatus ) {
-                                                $output.= '<option value="'. esc_attr( $key ) .'" ' .((isset($config['order_status']) && $key==$config['order_status'])?'selected':''). '>'. esc_attr( $orderStatus ).'</option>';
-                                            }
-                                        }
-                                        $output.='</select>';
-                                        if(empty($orderStatuses))
-                                            $output.='<div class="post_field_label" style="color:red; font-size:14px">' . __('No Order Statuses. Please Insert Order Status!', 'gethalal-mailer'). '</div>';
-                                        echo $output;
-                                        ?>
-                                        <p class="description"><?php esc_html_e( "Select Order Status for preprocessing orders", 'gethalal-mailer' ); ?></p>
-                                    </td>
-                                </tr>
-                                <tr valign="top">
                                     <th scope="row"><?php esc_html_e( 'Product Categories', 'gethalal-mailer' ); ?>:</th>
                                     <td>
                                         <?php
@@ -120,9 +99,9 @@
 
                             </table>
                             <p class="submit">
-                                <input type="submit" id="gethmailer_config-form-submit" class="button-primary" value="<?php esc_attr_e( 'Save Changes', 'gethalal-mailer' ); ?>" />
-                                <input type="hidden" name="gethmailer_config_submit" value="submit" />
-                                <?php wp_nonce_field( plugin_basename( __FILE__ ), 'gethmailer_config_nonce_name' ); ?>
+                                <input type="submit" id="gethprofit_config-form-submit" class="button-primary" value="<?php esc_attr_e( 'Save Changes', 'gethalal-mailer' ); ?>" />
+                                <input type="hidden" name="gethprofit_config_submit" value="submit" />
+                                <?php wp_nonce_field( plugin_basename( __FILE__ ), 'gethprofit_config_nonce_name' ); ?>
                             </p>
                         </div><!-- end of inside -->
                     </div><!-- end of postbox -->

@@ -53,7 +53,7 @@ class GethalalMailer
 
 	public function mail_cron_job(){
 		// Schedule Cron Job Event
-		if ($this->mailConfig['schedule_enabled']) {
+		if ($this->mailConfig && $this->mailConfig['schedule_enabled']) {
 		    if( !wp_next_scheduled( 'mail_preprocessing_products' )){
                 $time = $this->mailConfig['schedule_time']??23;
                 $this->scheduleWorking($time);

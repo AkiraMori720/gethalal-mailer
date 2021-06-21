@@ -1,0 +1,24 @@
+.pl_profit,
+.pl-revenue{
+    color: rgb(38,217,0 );
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+#pl-dashboard-form .pl-dashboard-row label{
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+#pl-dashboard-form .pl-dashboard-row select {
+    width: 100%;
+}
+
+#pl-dashboard-form .pl-data-range{
+    margin-top: 12px;
+}
+
+#pl-dashboard-form .submit {
+    margin-top: 12px !important;
+    margin-bottom: 8px !important;
+}

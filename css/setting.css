@@ -3,7 +3,9 @@
 #gethmailer_settings_form input[type='text'],
 #gethmailer_settings_form input[type='password'],
 #gethmailer_settings_form input[type='email'],
-#gethmailer_settings_test_email_form input[type='text']
+#gethmailer_settings_test_email_form input[type='text'],
+#gethprofit_config_form input[type='text'],
+#gethprofit_config_form input[type='number']
 {
     width: 350px;
 }
@@ -16,6 +18,7 @@ div.gethmailer-tab-wrapper {
     margin: 1px 12px;
 }
 
+#gethprofit_config_form.postbox,
 div.gethmailer-tab-container .postbox,
 div.gethmailer-log-container .postbox{
     padding: 8px;
@@ -58,6 +61,7 @@ div.gethmailer-msg-cont.msg-success {
 }
 
 #gethmailer_config_form .add-config-btn,
+#gethprofit_config_form .add-config-btn,
 #gethmailer_config_form .test-config-btn
 {
     background: #2271b1;

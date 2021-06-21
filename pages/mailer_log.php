@@ -14,7 +14,7 @@ if( isset( $_POST['gethmailer_log_clear_submit'])){
 ?>
 
 <div class="wrap" id="gm-mail-log">
-    <h2><?php esc_html_e( 'Mailer Logs', 'gethalal-mailer' ); ?></h2>
+    <h2><?php esc_html_e( 'Mailer Setting', 'gethalal-mailer' ); ?></h2>
 
     <div class="updated fade" <?php echo empty( $message ) ? ' style="display:none"' : ''; ?>>
         <p><strong><?php echo esc_html( $message ); ?></strong></p>
@@ -24,7 +24,7 @@ if( isset( $_POST['gethmailer_log_clear_submit'])){
     </div>
     <div class="gethmailer-log-container">
         <div class="postbox">
-            <h3 class="hndle"><label for="title"><?php esc_html_e( 'Preprocessing Logs', 'gethalal-mailer' ); ?></label></h3>
+            <h3 class="hndle"><label for="title"><?php esc_html_e( 'Mailer Logs', 'gethalal-mailer' ); ?></label></h3>
             <div class="inside">
                 <table class="form-table">
                     <?php
