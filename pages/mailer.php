@@ -16,11 +16,13 @@
         if(isset($result['error'])){
             $error .= $result['error'];
         } else {
-            $message .= __( 'Send mails successfully.', 'gethalal-mailer' );
+            $message .= __( 'Proceed action successfully.', 'gethalal-mailer' );
         }
     }
     // Submit Mailer Config
     else if( isset( $_POST['gethmailer_config_submit'])) {
+        $gethalal_config['mode'] = (isset($_POST['gethmailer_mode'])) ? $_POST['gethmailer_mode'] : 'no';
+
         if (isset($_POST['gethmailer_to'])) {
             if (is_email($_POST['gethmailer_to'])) {
                 $gethalal_config['gethmailer_to'] = sanitize_email($_POST['gethmailer_to']);
@@ -71,7 +73,6 @@
         $gethmailer_options['smtp_settings']['username'] = stripslashes($_POST['gethmailer_smtp_username']);
         $gethmailer_options['smtp_settings']['password'] = stripslashes($_POST['gethmailer_smtp_password']);
 
-
         if (isset($_POST['gethmailer_smtp_port'])) {
             if (empty($_POST['gethmailer_smtp_port']) || 1 > intval($_POST['gethmailer_smtp_port']) || (!preg_match('/^\d+$/', $_POST['gethmailer_smtp_port']))) {
                 $gethmailer_options['smtp_settings']['port'] = '25';
@@ -91,7 +92,7 @@
     }
     // Send Test Mail
     else if (isset($_POST['gethmailer_test_submit'])){
-       
+
         $gethmailer_test_to = '';
         if ( isset( $_POST['gethmailer_test_to'] ) ) {
 			$to_email = sanitize_text_field( $_POST['gethmailer_test_to'] );
@@ -136,11 +137,12 @@
         <a href="#product" data-tab-name="product" class="nav-tab"><?php esc_html_e( 'Preprocessing Config', 'gethalal-mailer' ); ?></a>
         <a href="#smtp" data-tab-name="smtp" class="nav-tab"><?php esc_html_e( 'SMTP Settings', 'gethalal-mailer' ); ?></a>
         <a href="#testemail" data-tab-name="testemail" class="nav-tab"><?php esc_html_e( 'Test Email', 'gethalal-mailer' ); ?></a>
+        <a href="#suppliers" data-tab-name="suppliers" class="nav-tab"><?php esc_html_e( 'Suppliers List', 'gethalal-mailer' ); ?></a>
     </div>
 
     <div class="gethmailer-settings-container">
         <div class="gethmailer-settings-grid gethmailer-settings-main-cont">
-            
+
             <input type="hidden" id="gethmailer_urlHash" name="gethmailer_urlHash" value="">
 
             <div class="gethmailer-tab-container" data-tab-name="product">
@@ -150,7 +152,24 @@
                         <div class="inside">
                             <table class="form-table">
                                 <tr valign="top">
-                                    <th scope="row"><?php esc_html_e( 'To', 'gethalal-mailer' ); ?>:</th>
+                                    <th scope="row"><?php esc_html_e( 'Mode', 'gethalal-mailer' ); ?></th>
+                                    <td>
+                                        <label for="gethmailer_mode"><input type="radio" id="gethmailer_mode_1" name="gethmailer_mode" value='no'
+                                                <?php
+                                                if ( !isset( $gethalal_config['mode'] ) || 'no' === $gethalal_config['mode'] ) {
+                                                    echo 'checked="checked"';}
+                                                ?>
+                                            /> <?php esc_html_e( 'Send Email', 'gethalal-mailer' ); ?></label>
+                                        <label for="gethmailer_mode" style="margin-left: 12px"><input type="radio" id="gethmailer_mode_2" name="gethmailer_mode" value='yes'
+                                                <?php
+                                                if ( isset( $gethalal_config['mode'] ) && 'yes' === $gethalal_config['mode'] ) {
+                                                    echo 'checked="checked"';}
+                                                ?>
+                                            /> <?php esc_html_e( 'Send Whatsapp Message To Suppliers', 'gethalal-mailer' ); ?></label><br />
+                                    </td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php esc_html_e( 'To EmailAddress', 'gethalal-mailer' ); ?>:</th>
                                     <td>
                                         <input id="gethmailer_to" type="text" class="gc-form-field" name="gethmailer_to" value="<?php echo isset( $gethalal_config['gethmailer_to'] ) ? esc_attr( $gethalal_config['gethmailer_to'] ) : ''; ?>" /><br />
                                         <p class="description"><?php esc_html_e( "Enter the recipient's email address", 'gethalal-mailer' ); ?></p>
@@ -201,7 +220,7 @@
                                 <tr valign="top">
                                     <th scope="row"><?php esc_html_e( 'Schedule Enabled', 'gethalal-mailer' ); ?>:</th>
                                     <td>
-                                        <input id="gethmailer_schedule" type="checkbox" class="gc-form-field" name="gethmailer_schedule" <?php echo $gethalal_config['schedule_enabled'] ? 'checked' : ''; ?> /><br />
+                                        <input id="gethmailer_schedule" type="checkbox" class="gc-form-field" name="gethmailer_schedule" <?php echo (isset($gethalal_config['schedule_enabled'])&&$gethalal_config['schedule_enabled']) ? 'checked' : ''; ?> /><br />
                                         <p class="description">
                                             <?php
                                             if($schedule_working){
@@ -223,7 +242,7 @@
                         </div><!-- end of inside -->
                     </form>
                     <form autocomplete="off" id="gethmailer_mails_form" method="post" action="" style="text-align: right; padding: 8px">
-                        <input type="submit" id="gethmailer_mails-form-submit" class="button-primary" value="<?php esc_attr_e( 'Test Mails', 'gethalal-mailer' ); ?>" />
+                        <input type="submit" id="gethmailer_mails-form-submit" class="button-primary" value="<?php esc_attr_e( 'Test Action', 'gethalal-mailer' ); ?>" />
                         <input type="hidden" name="gethmailer_mails_submit" value="submit" />
                         <?php wp_nonce_field( plugin_basename( __FILE__ ), 'gethmailer_mails_nonce_name' ); ?>
                     </form>
@@ -418,6 +437,26 @@
                     </div><!-- end of inside -->
                 </div><!-- end of postbox -->
 
+            </div>
+
+            <div class="gethmailer-tab-container" data-tab-name="suppliers">
+                <div class="postbox" id="gethmailer_suppliers_form">
+                    <h3 class="hndle"><label for="title"><?php esc_html_e( 'Suppliers List', 'gethalal-mailer' ); ?></label></h3>
+                    <div class="inside">
+                        <table class="form-table">
+                            <tr valign="top">
+                                <td>
+                                    <a class="add-config-btn" href="<?PHP echo (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $action_url . '?page=gm_mailer_supplier' ; ?>">Add New</a>
+                                    <?php
+                                        $sp_list_table = new GM_SP_List_Table();
+                                        $sp_list_table->prepare_items();
+                                        $sp_list_table->display();
+                                    ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div><!-- end of postbox -->
             </div>
 
         </div>

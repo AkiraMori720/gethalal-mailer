@@ -20,23 +20,23 @@
         if(!empty($_POST['config_name'])){
            $config['name'] = sanitize_text_field( $_POST['config_name'] );
         } else {
-            $error .= ' ' . __( "Please enter a valid name in the 'Name' field.", 'easy-wp-smtp' );
+            $error .= ' ' . __( "Please enter a valid name in the 'Name' field.", 'gethalal-mailer' );
         }
 
         $config['priority'] = $_POST['config_priority'];
         $config['order_status'] = $_POST['config_order_status'];
         $config['config'] = $_POST['config_categories'];
+        $config['supplier_id'] = $_POST['config_supplier_id'];
 
         /* Update settings in the database */
         if ( empty( $error ) ) {
             $gethalal_mailer->setConfig( $config );
             $message .= __( 'Config saved.', 'gethalal-mailer' );
+            $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_mailer";
+            wp_redirect($action_url);
         } else {
             $error .= ' ' . __( 'Config are not saved.', 'gethalal-mailer' );
         }
-
-        $action_url = (empty($_SERVER['HTTPS'])?"http://":"https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gethalal_mailer";
-        wp_redirect($action_url);
     }
 
     if(!empty($id)){
@@ -104,6 +104,25 @@
                                         echo $output;
                                         ?>
                                         <p class="description"><?php esc_html_e( "Select Order Status for preprocessing orders", 'gethalal-mailer' ); ?></p>
+                                    </td>
+                                </tr>
+                                <tr valign="top">
+                                    <th scope="row"><?php esc_html_e( 'Select Supplier', 'gethalal-mailer' ); ?>:</th>
+                                    <td>
+                                        <?php
+                                            $suppliers = $gethalal_mailer->getSuppliers();
+                                            $output = '<select class="gc-form-field" id="gethmailer_supplier" name="config_supplier_id">';
+                                            if(!empty($suppliers)){
+                                                foreach( $suppliers as $key => $supplier ) {
+                                                    $output.= '<option value="'. esc_attr( $key ) .'" ' .((isset($config['supplier_id']) && $key==$config['supplier_id'])?'selected':''). '>'. esc_attr( $supplier ).'</option>';
+                                                }
+                                            }
+                                            $output.='</select>';
+                                            if(empty($suppliers))
+                                                $output.='<div class="post_field_label" style="color:red; font-size:14px">' . __('No Supplier. Please Insert Supplier!', 'gethalal-mailer'). '</div>';
+                                            echo $output;
+                                        ?>
+                                        <p class="description"><?php esc_html_e( "Select supplier for preprocessing orders", 'gethalal-mailer' ); ?></p>
                                     </td>
                                 </tr>
                                 <tr valign="top">

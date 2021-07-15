@@ -76,7 +76,7 @@ $pl_to_date = get_option('pl-dashboard-config-to-date', date_i18n('Y-m-d'));
 
 $gethalal_profit = GethalalProfit::instance();
 $summary = $gethalal_profit->getDashboardSummary($selectedCat, $pl_from_date, $pl_to_date);
-
+$prices_precision = wc_get_price_decimals();
 ?>
 <div class="wrap pl-dashboard">
     <form autocomplete="off" id="pl-dashboard-form" method="post" action="">
@@ -118,14 +118,26 @@ $summary = $gethalal_profit->getDashboardSummary($selectedCat, $pl_from_date, $p
     <table id="aj_latest_gtmetrix_results" class="form-table aj-steps-table" width="100%" cellpadding="10">
         <tr>
             <td scope="row" align="center">
+                <h3><?php _e('Cost', 'gethalal-mailer'); ?></h3>
+                <span class="pl_cost"><span
+                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo wc_format_decimal( $summary['cost'], $prices_precision ); ?></span>
+            </td>
+            <td scope="row" align="center">
+                <h3><?php _e('Refund', 'gethalal-mailer'); ?></h3>
+                <span class="pl-return" style="color:<?php  echo $summary['refund']<0?'red':'' ?>"><span
+                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo wc_format_decimal( $summary['refund'], $prices_precision ); ?></span>
+            </td>
+        </tr>
+        <tr>
+            <td scope="row" align="center">
                 <h3><?php _e('Profit', 'gethalal-mailer'); ?></h3>
                 <span class="pl_profit"><span
-                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo $summary['profit']; ?></span>
+                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo wc_format_decimal( $summary['profit'], $prices_precision ); ?></span>
             </td>
             <td scope="row" align="center">
                 <h3><?php _e('Revenue', 'gethalal-mailer'); ?></h3>
                 <span class="pl-revenue"><span
-                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo $summary['revenue']; ?></span>
+                            class="woocommerce-Price-currencySymbol"><?php echo get_woocommerce_currency_symbol() ?></span><?php echo wc_format_decimal( $summary['revenue'], $prices_precision ); ?></span>
             </td>
         </tr>
     </table>

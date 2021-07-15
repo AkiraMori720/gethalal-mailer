@@ -5,7 +5,8 @@
 #gethmailer_settings_form input[type='email'],
 #gethmailer_settings_test_email_form input[type='text'],
 #gethprofit_config_form input[type='text'],
-#gethprofit_config_form input[type='number']
+#gethprofit_config_form input[type='number'],
+#gethmailer_supplier_form input[type='text']
 {
     width: 350px;
 }
@@ -62,7 +63,10 @@ div.gethmailer-msg-cont.msg-success {
 
 #gethmailer_config_form .add-config-btn,
 #gethprofit_config_form .add-config-btn,
-#gethmailer_config_form .test-config-btn
+#gethmailer_config_form .test-config-btn,
+#gethmailer_suppliers_form .add-config-btn,
+#gethalal_delivery .add-config-btn,
+#gethalal_delivery .download-btn
 {
     background: #2271b1;
     border-color: #2271b1;
@@ -77,6 +81,10 @@ div.gethmailer-msg-cont.msg-success {
     -webkit-appearance: none;
     border-radius: 3px;
     display: inline-block;
+}
+
+#gethalal_delivery .download-btn{
+    margin-top: 20px;
 }
 
 

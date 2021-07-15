@@ -80,13 +80,23 @@ class GethalalProfit
         $items_profit = 0;
 	    $order = wc_get_order($order_id);
         foreach ( $order->get_items() as $item ) {
+
+            $refunded_qty = abs( $order->get_qty_refunded_for_item( $item->get_id() ) );
+            if ( $refunded_qty && $item->get_quantity() === $refunded_qty ) {
+                continue;
+            }
+
             if ($item->is_type('line_item')) {
 
                 $order_status = $order->get_status();
+
                 foreach ($this->config as $config) {
                     $subject = $config['name'];
+
+                    // Filter Product Categories
                     $category_ids = gm_lang_object_ids($config['config'], 'product_cat');
-                    $revenue = $this->filterProduct($item, $category_ids);
+                    $revenue = $this->filterProduct($item, $refunded_qty, $category_ids);
+
                     if ($revenue) {
                         if (!isset($revenues[$config['id']])) {
                             $revenues[$config['id']] = ['subject' => $subject, 'revenue' => 0];
@@ -99,7 +109,7 @@ class GethalalProfit
 
                 // Profit in_city/out_city
                 $product = $item->get_product();
-                $quantity = $item->get_quantity();
+                $quantity = $item->get_quantity() - $refunded_qty;
                 $product_cost = $product->get_meta('_cost_price');
                 $item_profit = wc_get_price_including_tax($product, ['qty' => $quantity]) - ($product_cost==''?0:$product_cost) * $quantity;
                 $items_profit += $item_profit;
@@ -132,9 +142,10 @@ class GethalalProfit
         $handling_cost = get_option('pl_handling_cost', 0);
         $delivery_cost_in_city = get_option('pl_delivery_cost_in_city', 0);
         $shipping_cost_out_of_city = get_option('pl_shipping_cost_out_of_city', 0);
+        $shipping = floatval($order->get_shipping_total()) + floatval($order->get_shipping_tax());
 
-        $order_profit_in_city = $items_profit - $handling_cost - $delivery_cost_in_city;
-        $order_profit_out_city = $items_profit - $handling_cost - $shipping_cost_out_of_city;
+        $order_profit_in_city = $items_profit - $handling_cost - $delivery_cost_in_city + $shipping;
+        $order_profit_out_city = $items_profit - $handling_cost - $shipping_cost_out_of_city + $shipping;
 
         ?>
         <tr>
@@ -158,11 +169,12 @@ class GethalalProfit
      * @param $allow_category_ids
      * @return bool|float
      */
-	function filterProduct(WC_Order_Item_Product $order_item, $allow_category_ids)
+	function filterProduct(WC_Order_Item_Product $order_item, $refunded_qty, $allow_category_ids)
     {
         /** @var WC_Product $product */
         $product = $order_item->get_product();
-        $quantity = $order_item->get_quantity();
+        $quantity = $order_item->get_quantity() - $refunded_qty;
+
         if ($product) {
 
             $category_ids = $product->get_category_ids();
@@ -221,34 +233,59 @@ class GethalalProfit
     {
         $summary = [
             'profit' => 0,
-            'revenue' => 0
+            'revenue' => 0,
+            'cost' => 0,
+            'refund' => 0
         ];
         $page = 1;
+
+        // todo created_date from delivery_date (minus a month)
+        $from_create_date = new DateTime($from_date);
+        $from_create_date_str = $from_create_date->modify( 'first day of -1 month' )->format('Y-m-d');
+
         do {
             $orders = wc_get_orders([
                 'type' => 'shop_order',
                 'status' => 'wc-completed',
-                'date_after' => $from_date,
-                'date_before' => $to_date,
+                'date_after' => $from_create_date_str,
                 'page' => $page,
                 'limit' => 100
             ]);
 
             foreach ($orders as $order) {
                 $order = wc_get_order($order);
-                foreach ( $order->get_items() as $item ) {
-                    if ($item->is_type('line_item')) {
 
-                        /** @var WC_Product $product */
-                        $product = $item->get_product();
-                        $quantity = $item->get_quantity();
-                        $category_ids = $product->get_category_ids();
-                        $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
-                        if($category_id == 0 || in_array(gm_lang_object_ids($category_id, 'product_cat'), $category_ids)) {
+                // Check DateTime Range
+                $_delivery_date = get_post_meta($order->get_id(), '_delivery_date', true);
+                if(empty($_delivery_date)){ continue; }
+
+                $delivery_date = (new DateTime())->setTimestamp($_delivery_date)->format('Y-m-d');
+                if($delivery_date > $to_date || $delivery_date < $from_date) {
+                    continue;
+                }
+
+                foreach ( $order->get_items() as $item ) {
+
+                    /** @var WC_Product $product */
+                    $product = $item->get_product();
+                    if(!$product) {
+                        continue;
+                    }
+
+                    $category_ids = $product->get_category_ids();
+                    $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
+                    if($category_id == 0 || in_array(gm_lang_object_ids($category_id, 'product_cat'), $category_ids)) {
+                        // Exclude Refund Order
+                        $refunded_qty = abs( $order->get_qty_refunded_for_item($item->get_id()) );
+                        if ( $refunded_qty > 0 && $item->get_quantity() === $refunded_qty ) {
+                            $summary['refund'] -= $order->get_total_refunded_for_item($item->get_id());
+                        } else if ($item->is_type('line_item')) {
+                            $quantity = $item->get_quantity();
                             $revenue = wc_get_price_including_tax($product, ['qty' => $quantity]);
                             $summary['revenue'] += $revenue;
                             $product_cost = $product->get_meta('_cost_price');
                             $cost = ($product_cost == ''?0:$product_cost) * $quantity;
+                            $summary['cost'] += $cost;
                             $summary['profit'] += $revenue - $cost;
                         }
                     }

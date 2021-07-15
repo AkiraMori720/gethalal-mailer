@@ -3,9 +3,9 @@
  /**
  * Plugin Name: Gethalal Mailer
  * Description: Send mail about preprocessing orders
- * Version: 2.0.0
+ * Version: 2.2.0
  * Author: Kzar
- * Author URI: mailto:kzar1102@outlook.com?subject=Gethalal%20Mailer 
+ * Author URI: mailto:kzar1102@outlook.com?subject=Gethalal%20Mailer
  * Requires at least: 4.9
  * Tested up to: 5.3
  * Requires PHP: 5.6
@@ -26,12 +26,15 @@ if(!is_admin()){
 include("gethalal-functions.php");
 include("class/class-gethalal-mailer.php");
 include("class/class-gethalal-profit.php");
+include("class/class-gethalal-delivery.php");
+include("includes/class-dompdf.php");
+
 GethalalMailer::instance();
 GethalalProfit::instance();
 
 // Define constants.
 define('GETHALAL_MAILER_PLUGIN_NAME', basename(__DIR__));
-define('GETHALAL_MAILER_VERSION', '1.0.0');
+define('GETHALAL_MAILER_VERSION', '2.2.0');
 define('GETHALAL_MAILER_PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('GETHALAL_MAILER_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
 define('GETHALAL_MAILER_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -56,6 +59,7 @@ function gethalal_mailer_db_install() {
         `name` varchar(255) NOT NULL,
         `priority` int(11) NOT NULL,
         `order_status` varchar(32) NOT NULL,
+        `supplier_id` int(11) NOT NULL,
         `config` varchar(512) NOT NULL,
         `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
         `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -67,6 +71,14 @@ function gethalal_mailer_db_install() {
         `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
         `datetime` varchar(255) NOT NULL,
         `message` varchar(512)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+    dbDelta( $sql );
+
+    $sql = "CREATE TABLE `${wpdb_prefix}gethmailer_suppliers` (
+        `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+        `name` varchar(255) NOT NULL,
+        `phone_number` varchar(255) NOT NULL,
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
     dbDelta( $sql );
@@ -87,22 +99,32 @@ function gethalal_mailer_db_install() {
  * Add Admin Menu
  */
 function gethalal_mailer_register_menu(){
+    // Mailer Setting
     add_menu_page('Mailer Setting','Mailer Setting','read','gethalal_mailer','goto_gethalal_mailer_page','',26);
     add_submenu_page("gethalal_mailer",__( 'New Config', 'gethalal-mailer' ), __( 'New Config', 'gethalal-mailer' ), "manage_options", "gm_mailer_config", 'goto_gethalal_mailer_config_page');
     add_submenu_page("gethalal_mailer",__( 'Mailer Log', 'gethalal-mailer' ), __( 'Mailer Log', 'gethalal-mailer' ), "manage_options", "gm_mailer_log", 'goto_gethalal_mailer_log_page');
+    add_submenu_page("gethalal_mailer",__( 'New Supplier', 'gethalal-mailer' ), __( 'New Supplier', 'gethalal-mailer' ), "manage_options", "gm_mailer_supplier", 'goto_gethalal_mailer_supplier_page');
 
     // Profit/Loss
     add_menu_page('Profit Calculator','Profit Calculator','read','gethalal_profit','goto_gethalal_profit_page','',26);
     add_submenu_page("gethalal_profit",__( 'New Config', 'gethalal-mailer' ), __( 'New Config', 'gethalal-mailer' ), "manage_options", "gm_profit_config", 'goto_gethalal_profit_config_page');
     add_submenu_page("gethalal_profit",__( 'Cost Setting', 'gethalal-mailer' ), __( 'Cost Setting', 'gethalal-mailer' ), "manage_options", "gm_cost_setting", 'goto_gethalal_cost_setting_page');
+
+    // Delivery Automation
+    add_menu_page('Delivery Automation','Delivery Automation','read','gethalal_delivery','goto_gethalal_delivery_page','',26);
+    add_submenu_page("gethalal_delivery",__( 'New Column', 'gethalal-mailer' ), __( 'New Column', 'gethalal-mailer' ), "manage_options", "gm_ds_column_config", 'goto_gethalal_dscolumn_config_page');
 }
 
 function goto_gethalal_mailer_page(){
-    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer.php';  
+    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer.php';
 }
 
 function goto_gethalal_profit_page(){
     require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/profit.php';
+}
+
+function goto_gethalal_delivery_page(){
+    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/delivery.php';
 }
 
 function goto_gethalal_mailer_config_page(){
@@ -117,17 +139,31 @@ function goto_gethalal_mailer_log_page(){
     require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer_log.php';
 }
 
+function goto_gethalal_mailer_supplier_page(){
+    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/mailer_supplier.php';
+}
+
 function goto_gethalal_cost_setting_page(){
     require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/cost_setting.php';
+}
+
+function goto_gethalal_dscolumn_config_page(){
+    require_once GETHALAL_MAILER_PLUGIN_DIR . '/pages/ds_column_config.php';
 }
 
 add_action('admin_menu','gethalal_mailer_register_menu');
 
 function fontawesome_icon_gethalal_mailer_menu() {
     echo '<style type="text/css" media="screen">
-        icon16.icon-media:before, #toplevel_page_gethalal_mailer .toplevel_page_gethalal_mailer div.wp-menu-image:before {
+        #toplevel_page_gethalal_mailer .toplevel_page_gethalal_mailer div.wp-menu-image:before {
         font-family: "Font Awesome 5 Free" !important;
         content: "\\f0e0";
+        font-style:normal;
+        font-weight:900;
+        }
+        #toplevel_page_gethalal_delivery .toplevel_page_gethalal_delivery div.wp-menu-image:before {
+        font-family: "Font Awesome 5 Free" !important;
+        content: "\\f0d1";
         font-style:normal;
         font-weight:900;
         }
@@ -144,10 +180,19 @@ function gethalal_enqueue($hook){
     if($hook == "toplevel_page_gethalal_mailer"){
 		wp_enqueue_script( 'gethmailer_admin_js', plugin_dir_url(__FILE__) . 'js/script.js', array(), GETHALAL_MAILER_VERSION);
         wp_enqueue_style( 'gethmailer_admin_css', plugin_dir_url(__FILE__) . 'css/setting.css', array(), GETHALAL_MAILER_VERSION );
-    } else if($hook == "mailer-setting_page_gm_mailer_config" || $hook == "toplevel_page_gethalal_profit" || $hook == "profit-calculator_page_gm_profit_config"){
+    } else if($hook == "mailer-setting_page_gm_mailer_config"
+        || $hook == "toplevel_page_gethalal_profit"
+        || $hook == "toplevel_page_gethalal_delivery"
+        || $hook == "profit-calculator_page_gm_profit_config"
+        || $hook == "mailer-setting_page_gm_mailer_log"
+        || $hook == "mailer-setting_page_gm_mailer_supplier"
+        || $hook == "mailer-setting_page_gm_ds-column-config"
+    ){
         wp_enqueue_style( 'gethmailer_config_css', plugins_url('css/setting.css',__FILE__ ), array(), GETHALAL_MAILER_VERSION );
-    } else if($hook == "mailer-setting_page_gm_mailer_log"){
-        wp_enqueue_style( 'gethmailer_log_css', plugin_dir_url(__FILE__) . 'css/setting.css', array(), GETHALAL_MAILER_VERSION );
+    }
+    if($hook == "mailer-setting_page_gm_mailer_supplier"){
+        wp_enqueue_script( 'gethmailer_tel_input_js', "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js", array() );
+        wp_enqueue_style( 'gethmailer_tel_input_css', "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css", array() );
     }
 }
 add_action('admin_enqueue_scripts',  'gethalal_enqueue');

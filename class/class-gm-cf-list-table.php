@@ -45,6 +45,7 @@ class GM_CF_List_Table extends WP_List_Table
             'name' => 'Name',
             'priority' => 'Priority',
             'order_status' => 'Order Status',
+            'supplier' => 'Supplier',
             'config' => 'Config'
         );
 
@@ -76,12 +77,13 @@ class GM_CF_List_Table extends WP_List_Table
 
     public function get_sortable_columns()
     {
-        return array('name' => array('name', false), 'priority' => array('priority', false), 'order_status' => array('order_status', false), 'config' => array('config', false));
+        return array('name' => array('name', false), 'priority' => array('priority', false), 'order_status' => array('order_status', false), 'supplier' => array('supplier', false),  'config' => array('config', false));
     }
 
     private function table_data()
     {
         $data = array();
+        $suppliers = GethalalMailer::instance()->suppliers;
         global $wpdb;
 
         $config_table = $wpdb->prefix . 'gethmailer_configs';
@@ -96,6 +98,7 @@ class GM_CF_List_Table extends WP_List_Table
                 'name' => $config->name,
                 'priority' => $config->priority,
                 'order_status' => $config->order_status,
+                'supplier' => isset($suppliers[$config->supplier_id])?$suppliers[$config->supplier_id]['name']:'No Selected',
                 'config' => explode(",", $config->config),
             ];
         }
@@ -109,6 +112,7 @@ class GM_CF_List_Table extends WP_List_Table
             case 'name':
                 return $this->first_column($item, "<strong>" . $item['name'] . "</strong>");
             case 'priority':
+            case 'supplier':
                 return $item[$column_name];
             case 'order_status':
                 return wc_get_order_status_name($item[$column_name]);
@@ -142,6 +146,153 @@ class GM_CF_List_Table extends WP_List_Table
     {
         // Set defaults
         $orderby = 'priority';
+        $order = 'asc';
+
+        // If orderby is set, use this as the sort column
+        if (!empty($_GET['orderby']) && $_GET['orderby'] != 'config') {
+            $orderby = $_GET['orderby'];
+        }
+
+        // If order is set use this as the order
+        if (!empty($_GET['order'])) {
+            $order = $_GET['order'];
+        }
+
+
+        $result = strcmp($a[$orderby], $b[$orderby]);
+
+        if ($order === 'asc') {
+            return $result;
+        }
+
+        return -$result;
+    }
+}
+
+
+class GM_SP_List_Table extends WP_List_Table
+{
+    function __construct()
+    {
+        parent::__construct(array(
+            'singular' => 'singular_name',
+            'plural' => 'plural_name',
+            'ajax' => false
+        ));
+    }
+
+    public function prepare_items()
+    {
+        $columns = $this->get_columns();
+        $hidden = $this->get_hidden_columns();
+        $sortable = $this->get_sortable_columns();
+
+        $data = $this->table_data();
+        usort($data, array(&$this, 'sort_data'));
+
+        $perPage = 10;
+        $currentPage = $this->get_pagenum();
+        $totalItems = count($data);
+
+        $this->set_pagination_args(array(
+            'total_items' => $totalItems,
+            'per_page' => $perPage
+        ));
+
+        $data = array_slice($data, (($currentPage - 1) * $perPage), $perPage);
+
+        $this->_column_headers = array($columns, $hidden, $sortable);
+        $this->items = $data;
+    }
+
+    public function get_columns()
+    {
+        $columns = array(
+            'cb' => '<input type="checkbox" />',
+            'name' => 'Name',
+            'phone_number' => 'Whatsapp Number',
+        );
+
+        return $columns;
+    }
+
+    public function get_hidden_columns()
+    {
+        return ['id'];
+    }
+
+    public function first_column($item, $field)
+    {
+        $uri_parts = explode('?', $_SERVER['REQUEST_URI'], 2);
+
+        $config_id = $item['id'];
+        $action_url = (empty($_SERVER['HTTPS']) ? "http://" : "https://") . $_SERVER['HTTP_HOST'] . $uri_parts[0] . "?page=gm_mailer_supplier&id=$config_id";
+
+        $actions = array(
+
+            'edit' => sprintf('<a href="%s">%s</a>', $action_url, __("Edit", "gethalal-mailer")),
+
+            'trash' => sprintf('<a href="%s&action=trash">' . __("Trash", "gethalal-mailer") . '</a>', $action_url),
+
+        );
+        return sprintf('%1$s %2$s', $field, $this->row_actions($actions));
+    }
+
+
+    public function get_sortable_columns()
+    {
+        return array('name' => array('name', false), 'phone_number' => array('phone_number', false));
+    }
+
+    private function table_data()
+    {
+        $data = array();
+        global $wpdb;
+
+        $config_table = $wpdb->prefix . 'gethmailer_suppliers';
+
+        $select_sql = "SELECT * FROM ${config_table}";
+
+        $configs = $wpdb->get_results($select_sql);
+
+        foreach ($configs as $config) {
+            $data[] = [
+                'id' => $config->id,
+                'name' => $config->name,
+                'phone_number' => $config->phone_number
+            ];
+        }
+
+        return $data;
+    }
+
+    public function column_default($item, $column_name)
+    {
+        switch ($column_name) {
+            case 'name':
+                return $this->first_column($item, "<strong>" . $item['name'] . "</strong>");
+            case 'phone_number':
+                return $item[$column_name];
+            default:
+                return print_r($item, true);
+        }
+    }
+
+    // Displaying checkboxes!
+    function column_cb($item)
+    {
+        return sprintf(
+            '<input type="checkbox" name="%1$s" id="%2$s" value="checked" />',
+            //$this->_args['singular'],
+            $item['id'] . '_status',
+            $item['id'] . '_status'
+        );
+    }
+
+    private function sort_data($a, $b)
+    {
+        // Set defaults
+        $orderby = 'name';
         $order = 'asc';
 
         // If orderby is set, use this as the sort column
