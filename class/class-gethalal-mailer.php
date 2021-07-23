@@ -39,7 +39,7 @@ class GethalalMailer
         $this->opts = ! is_array( $this->opts ) ? array() : $this->opts;
 
         // Disable Auto schedule
-        add_action( 'wp', array($this, 'mail_cron_job'));
+        add_action( 'wp_loaded', array($this, 'mail_cron_job'));
         add_action( 'mail_preprocessing_products', array($this, 'send_mail_preprocessing_products'));
     }
 
@@ -73,6 +73,7 @@ class GethalalMailer
 	        $now = new DateTime();
         }
         $now->setTime($time, 00);
+	    var_dump('schedule set', $time, $now);
         wp_schedule_event( $now->getTimestamp(), 'daily', 'mail_preprocessing_products' );
     }
 
@@ -87,7 +88,6 @@ class GethalalMailer
     public function unScheduleWorking(){
        $timestamp = wp_next_scheduled( 'mail_preprocessing_products' );
        if($timestamp){
-           var_dump("unschedule",$timestamp);
            wp_unschedule_event($timestamp, 'mail_preprocessing_products');
        }
     }
