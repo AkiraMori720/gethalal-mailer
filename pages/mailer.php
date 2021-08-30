@@ -11,7 +11,7 @@
 
 	// Test Mails
     if( isset($_POST['gethmailer_mails_submit'])){
-        $result = $gethalal_mailer->send_mail_preprocessing_products();
+        $result = $gethalal_mailer->send_notification_for_preprocessing_products(false);
         //$result = $gethalal_mailer->mail_cron_job();
         if(isset($result['error'])){
             $error .= $result['error'];

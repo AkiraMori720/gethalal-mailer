@@ -37,10 +37,6 @@ class GethalalMailer
 
         $this->opts = get_option( 'gethalal_smtp_options' );
         $this->opts = ! is_array( $this->opts ) ? array() : $this->opts;
-
-        // Disable Auto schedule
-        add_action( 'wp_loaded', array($this, 'mail_cron_job'));
-        add_action( 'mail_preprocessing_products', array($this, 'send_mail_preprocessing_products'));
     }
 
 	public function credentials_configured() {
@@ -53,6 +49,22 @@ class GethalalMailer
 		}
 		return $credentials_configured;
 	}
+
+	public function cronWork(){
+        if ($this->mailConfig && $this->mailConfig['schedule_enabled']) {
+            $time = $this->mailConfig['schedule_time']??23;
+
+            try{
+                $now = new DateTime('now', new DateTimeZone('Europe/Berlin'));
+            } catch (Exception $exception) {
+                $now = new DateTime();
+            }
+
+            if(intval($now->format('H')) === intval($time)){
+                $this->send_notification_for_preprocessing_products();
+            }
+        }
+    }
 
 	public function mail_cron_job(){
 		// Schedule Cron Job Event
@@ -73,8 +85,7 @@ class GethalalMailer
 	        $now = new DateTime();
         }
         $now->setTime($time, 00);
-	    var_dump('schedule set', $time, $now);
-        wp_schedule_event( $now->getTimestamp(), 'daily', 'mail_preprocessing_products' );
+        wp_schedule_event( $now->getTimestamp(), 'gethdaily', 'mail_preprocessing_products' );
     }
 
 	public function reScheduleWorking($time){
@@ -390,7 +401,9 @@ class GethalalMailer
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	function send_mail_preprocessing_products(){
+	function send_notification_for_preprocessing_products($fromSchedule = true){
+        $this->addLog("send notification: " . ($fromSchedule?'from schedule':'from form submit') . '  Time: ' .  date('Y-m-d H:i:s'));
+
 	    $valid_order_status = array_map(function($i){return $i['order_status'];}, $this->config);
 	    $page = 1;
 	    $processing_orders = [];
@@ -491,10 +504,10 @@ class GethalalMailer
         $delivery_date = (new DateTime())->setTimestamp($_delivery_date)->format('Y-m-d');
 
         //test
-        $this->addLog(sprintf(
-            "delivery_date: %s => OrderId: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
-            $delivery_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
-        ));
+//        $this->addLog(sprintf(
+//            "delivery_date: %s => OrderId: %s Customer: %s %s OrderStatus: %s Total: €%.2f",
+//            $delivery_date, $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name(), $order->get_status(), $order->get_total()
+//        ));
 
         switch ($deliveryTime){
             case "0":

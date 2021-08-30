@@ -18,10 +18,6 @@ if (!defined('ABSPATH')) {
     die;
 }
 
-if(!is_admin()){
-    return;
-}
-
 // Include Class File
 include("gethalal-functions.php");
 include("class/class-gethalal-mailer.php");
@@ -38,6 +34,39 @@ define('GETHALAL_MAILER_VERSION', '2.2.0');
 define('GETHALAL_MAILER_PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('GETHALAL_MAILER_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
 define('GETHALAL_MAILER_PLUGIN_BASENAME', plugin_basename(__FILE__));
+
+
+function gethalal_add_every_day( $schedules ) {
+    // add a 'weekly' schedule to the existing set
+    $schedules['gethdaily'] = array(
+        'interval' => 86400,
+        'display' => __('Every day')
+    );
+    return $schedules;
+}
+add_filter( 'cron_schedules', 'gethalal_add_every_day' );
+
+function gethalal_cron_job(){
+    $instance = GethalalMailer::instance();
+    $instance->mail_cron_job();
+}
+add_action( 'init',  'gethalal_cron_job');
+
+function gethalal_send_notification_for_preprocessing_products(){
+    $instance = GethalalMailer::instance();
+    $instance->send_notification_for_preprocessing_products();
+//    $instance->addLog('send test mail');
+//    $test_mail_config = $instance->getTestMail();
+//    $instance->sendMail($test_mail_config['gethmailer_to'], $test_mail_config['gethmailer_subject'], $test_mail_config['gethmailer_message'], true);
+}
+
+// Cron schedule
+add_action( 'mail_preprocessing_products', 'gethalal_send_notification_for_preprocessing_products');
+
+
+if(!is_admin()){
+    return;
+}
 
 // Plugin Activation
 register_activation_hook(__FILE__, 'gethalal_mailer_activate');
@@ -78,7 +107,7 @@ function gethalal_mailer_db_install() {
     $sql = "CREATE TABLE `${wpdb_prefix}gethmailer_suppliers` (
         `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
         `name` varchar(255) NOT NULL,
-        `phone_number` varchar(255) NOT NULL,
+        `phone_number` varchar(255) NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
     dbDelta( $sql );
@@ -271,8 +300,6 @@ function gethalal_woocommerce_admin_order_data_after_order_details( $order ){
     </div>
     <?php
 }
-
-
 
 // Plugin Deactivation
 register_deactivation_hook(__FILE__, 'gethalal_mailer_deactivate');
