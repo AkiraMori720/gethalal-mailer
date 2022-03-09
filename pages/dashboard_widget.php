@@ -116,6 +116,13 @@ $prices_precision = wc_get_price_decimals();
     </form>
     <hr/>
     <table id="aj_latest_gtmetrix_results" class="form-table aj-steps-table" width="100%" cellpadding="10">
+        <?php if($summary['overlimit']) { ?>
+        <tr>
+            <td colspan="2">
+                <span style="color: red;">? Number of orders is over 1000. The following is the value for only 1000 orders. Please reduce date range!</span>
+            </td>
+        </tr>
+        <?php } ?>
         <tr>
             <td scope="row" align="center">
                 <h3><?php _e('Cost', 'gethalal-mailer'); ?></h3>

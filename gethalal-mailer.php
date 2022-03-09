@@ -3,7 +3,7 @@
  /**
  * Plugin Name: Gethalal Mailer
  * Description: Send mail about preprocessing orders
- * Version: 2.2.0
+ * Version: 2.2.2
  * Author: Kzar
  * Author URI: mailto:kzar1102@outlook.com?subject=Gethalal%20Mailer
  * Requires at least: 4.9
@@ -17,7 +17,6 @@
 if (!defined('ABSPATH')) {
     die;
 }
-
 // Include Class File
 include("gethalal-functions.php");
 include("class/class-gethalal-mailer.php");
@@ -35,12 +34,11 @@ define('GETHALAL_MAILER_PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)
 define('GETHALAL_MAILER_PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
 define('GETHALAL_MAILER_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
-
 function gethalal_add_every_day( $schedules ) {
     // add a 'weekly' schedule to the existing set
     $schedules['gethdaily'] = array(
         'interval' => 86400,
-        'display' => __('Every day')
+        'display' => __('Mailer Every day')
     );
     return $schedules;
 }
@@ -55,14 +53,10 @@ add_action( 'init',  'gethalal_cron_job');
 function gethalal_send_notification_for_preprocessing_products(){
     $instance = GethalalMailer::instance();
     $instance->send_notification_for_preprocessing_products();
-//    $instance->addLog('send test mail');
-//    $test_mail_config = $instance->getTestMail();
-//    $instance->sendMail($test_mail_config['gethmailer_to'], $test_mail_config['gethmailer_subject'], $test_mail_config['gethmailer_message'], true);
 }
 
 // Cron schedule
 add_action( 'mail_preprocessing_products', 'gethalal_send_notification_for_preprocessing_products');
-
 
 if(!is_admin()){
     return;

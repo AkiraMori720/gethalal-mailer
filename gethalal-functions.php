@@ -1,7 +1,7 @@
 <?php
 
 
-function gm_lang_object_ids($object_id, $type) {
+function gethalal_lang_object_ids($object_id, $type) {
     $current_language= apply_filters( 'wpml_current_language', NULL );
     if(class_exists( 'SitePress' )){
         if( is_array( $object_id ) ){

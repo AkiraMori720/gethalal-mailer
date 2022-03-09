@@ -438,7 +438,7 @@ class GethalalMailer
                                 continue;
                             }
 
-                            $category_ids = gm_lang_object_ids($config['config'], 'product_cat');
+                            $category_ids = gethalal_lang_object_ids($config['config'], 'product_cat');
                             $productData = $this->filterProduct($item, $category_ids);
                             if ($productData) {
                                 if (!isset($processing_orders[$config['id']])) {
@@ -549,7 +549,7 @@ class GethalalMailer
         if ($product) {
 
             $category_ids = $product->get_category_ids();
-            $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
+            $category_ids = gethalal_lang_object_ids($category_ids, 'product_cat');
 
             if (!$this->allowCategory($category_ids, $allow_category_ids)) {
                 return false;

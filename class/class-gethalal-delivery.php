@@ -80,7 +80,7 @@ class GethalalDelivery
                         foreach ($sorted_columns as $column) {
                             $title = $column['name'];
                             $config_category_ids = explode(",", $column['config']);
-                            $category_ids = gm_lang_object_ids($config_category_ids, 'product_cat');
+                            $category_ids = gethalal_lang_object_ids($config_category_ids, 'product_cat');
                             $productData = GethalalMailer::instance()->filterProduct($item, $category_ids);
                             $sheetData[$order->get_id()]['fields'][$title] = $productData?'Yes':'';
                         }

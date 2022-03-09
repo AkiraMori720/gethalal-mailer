@@ -46,7 +46,7 @@
         $result=$wpdb->get_results("SELECT * FROM $table_name WHERE id = $id");
         $config = (array)($result[0]);
         $config_category_ids = explode(",", $config['config']);
-        $category_ids = gm_lang_object_ids($config_category_ids, 'product_cat');
+        $category_ids = gethalal_lang_object_ids($config_category_ids, 'product_cat');
         $config['config'] = $category_ids;
     } else {
         $config = [];

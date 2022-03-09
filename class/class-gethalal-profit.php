@@ -94,7 +94,7 @@ class GethalalProfit
                     $subject = $config['name'];
 
                     // Filter Product Categories
-                    $category_ids = gm_lang_object_ids($config['config'], 'product_cat');
+                    $category_ids = gethalal_lang_object_ids($config['config'], 'product_cat');
                     $revenue = $this->filterProduct($item, $refunded_qty, $category_ids);
 
                     if ($revenue) {
@@ -178,7 +178,7 @@ class GethalalProfit
         if ($product) {
 
             $category_ids = $product->get_category_ids();
-            $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
+            $category_ids = gethalal_lang_object_ids($category_ids, 'product_cat');
 
             if (!$this->allowCategory($category_ids, $allow_category_ids)) {
                 return false;
@@ -235,7 +235,8 @@ class GethalalProfit
             'profit' => 0,
             'revenue' => 0,
             'cost' => 0,
-            'refund' => 0
+            'refund' => 0,
+            'overlimit' => 0
         ];
         $page = 1;
 
@@ -273,8 +274,8 @@ class GethalalProfit
                     }
 
                     $category_ids = $product->get_category_ids();
-                    $category_ids = gm_lang_object_ids($category_ids, 'product_cat');
-                    if($category_id == 0 || in_array(gm_lang_object_ids($category_id, 'product_cat'), $category_ids)) {
+                    $category_ids = gethalal_lang_object_ids($category_ids, 'product_cat');
+                    if($category_id == 0 || in_array(gethalal_lang_object_ids($category_id, 'product_cat'), $category_ids)) {
                         // Exclude Refund Order
                         $refunded_qty = abs( $order->get_qty_refunded_for_item($item->get_id()) );
                         if ( $refunded_qty > 0 && $item->get_quantity() === $refunded_qty ) {
@@ -292,6 +293,10 @@ class GethalalProfit
                 }
             }
             $page++;
+            if($page > 10) {
+                $summary['overlimit'] = 1;
+                break;
+            }
         }while(count($orders) == 100);
 
         return $summary;
